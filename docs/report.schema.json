@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webimario85-svg/ro-doctor/blob/main/docs/report.schema.json",
+  "title": "RO Doctor diagnostic report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "tool", "version", "targets", "summary", "findings"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "tool": {"const": "ro-doctor"},
+    "version": {"type": "string"},
+    "targets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "server": {"type": "string"},
+        "client": {"type": "string"}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["error", "warning", "info"],
+      "properties": {
+        "error": {"type": "integer", "minimum": 0},
+        "warning": {"type": "integer", "minimum": 0},
+        "info": {"type": "integer", "minimum": 0}
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "severity", "subject", "message", "recommendation", "path"],
+        "properties": {
+          "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"},
+          "severity": {"enum": ["error", "warning", "info"]},
+          "subject": {"type": "string"},
+          "message": {"type": "string"},
+          "recommendation": {"type": "string"},
+          "path": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}

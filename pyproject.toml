@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ro-doctor"
+version = "0.1.0"
+description = "Offline, read-only diagnostics for Ragnarok Online clients and rAthena servers"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "RO Doctor contributors"}]
+keywords = ["rathena", "ragexe", "ragnarok-online", "diagnostics"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+
+[project.scripts]
+rodoctor = "rodoctor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
