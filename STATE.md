@@ -11,8 +11,9 @@ Do not mix with ValkiRO source or branches. No copyrighted assets, secret config
 - M3 v0.4.0, PR #3: map-index correlation, external QA case schema, provenance auditing. Last known main before M4: 114ecbbd7830135f37a36f732de9e5b43be06f2c.
 
 ## M4 completed — 2026-11-21
-- Branch: feat/m4-evidence-log-and-map-index, worktree: D:\ro-doctor-m4, based on 114ecbbd7830135f37a36f732de9e5b43be06f2c.
-- The original main is D:\ro-doctor. The older M1/M2/M3 worktrees were left untouched. Confirm the merged PR, tag and current main HEAD with Git rather than storing speculative SHAs in the feature commit.
+- Branch: feat/m4-evidence-log-and-map-index, worktree: D:\ro-doctor-m4, based on 114ecbbd7830135f37a36f732de9e5b43be06f2c. Feature commit: 5d905d7727fe3647ee0d8767f2f6d99a6b5cf34f.
+- PR #4: https://github.com/webimario85-svg/ro-doctor/pull/4 (merged); squash merge to main: a2e590e83459f975980fd4465d2076af4ac9b1bb. The original main is D:\ro-doctor, older M1/M2/M3 worktrees left untouched.
+- Post-merge main QA confirmed Windows 134/134 tests and offline v0.5.0 release preflight PASS, 14 detectors listed. Release tag: v0.5.0 (verify current Git tag and HEAD; checkpoint text predates its own commit).
 - Version 0.5.0, 14 registered detectors unchanged, diagnostic JSON schema v1 unchanged, no extra install dependencies.
 - --case-log adds explicit bounded SHA-256 verification of a local sanitized QA log against a case manifest. This reads at most 128 MiB in 1 MiB chunks, avoids reporting user paths/log contents, and does not touch scanned directories. A missing/invalid/mismatched checksum suppresses the case's reported pass/fail; a matching checksum only confirms byte identity, not actual test execution or protocol support.
 - --map-index accepts up to 16 extra relative .txt providers resolved within --server. Rejects traversal, absolute paths, missing or out-of-root files. Adds names to standard index paths and preserves all M3 custom-map informational semantics.
