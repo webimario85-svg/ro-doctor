@@ -216,10 +216,10 @@ def _scan_client(root: Path, report: Report) -> None:
                    "Verify section name, encoding, and asset load order.", ini.name)
 
 
-def build_registry():
+def build_registry(*, catalog_path=None, server_build_sha256=None, client_exe=None):
     """Return fresh built-ins so users can extend without mutating global state."""
     from .checks import Check, Registry
-    from . import enhanced
+    from . import catalog, enhanced, mapcache
 
     registry = Registry()
     registry.register(Check("server-static", "server",
@@ -231,6 +231,12 @@ def build_registry():
     registry.register(Check("server-sparse-cache", "server",
                             "Sparse mapcache metadata review (#10099)",
                             enhanced.mapcache_sparse))
+    registry.register(Check("server-mapcache-structure", "server",
+                            "Bounded binary mapcache header, entry count and offset validation",
+                            mapcache.structure))
+    registry.register(Check("server-mapcache-deep", "server",
+                            "On-demand bounded zlib payload validation for mapcache",
+                            mapcache.deep_payloads, default=False))
     registry.register(Check("client-static", "client",
                             "Client executable, assets, and data.ini GRF references",
                             lambda server, client, report: _scan_client(client, report)))
@@ -246,16 +252,24 @@ def build_registry():
     registry.register(Check("protocol-evidence", "combined",
                             "Non-authoritative client filename vs source PACKETVER hints",
                             enhanced.protocol_evidence))
+    registry.register(Check("catalog-evidence", "client",
+                            "Opt-in exact client/server build SHA-256 pair evidence catalog",
+                            catalog.detector(catalog_path, server_build_sha256, client_exe),
+                            default=catalog_path is not None))
     return registry
 
 
 def scan(server: Path | None = None, client: Path | None = None, *,
          only: list[str] | None = None,
          skip: list[str] | None = None,
-         registry=None) -> Report:
+         registry=None, catalog_path: Path | None = None,
+         server_build_sha256: str | None = None,
+         client_exe: str | None = None) -> Report:
     """Read-only scan using explicitly registered checks. Never loads plugins from disk."""
     report = Report()
-    selected = (registry if registry is not None else build_registry()).select(only, skip)
+    selected = (registry if registry is not None else build_registry(
+        catalog_path=catalog_path, server_build_sha256=server_build_sha256,
+        client_exe=client_exe)).select(only, skip)
     paths = {"server": Path(server).expanduser() if server is not None else None,
              "client": Path(client).expanduser() if client is not None else None}
     valid = {"server": False, "client": False}

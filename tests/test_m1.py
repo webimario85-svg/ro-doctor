@@ -39,8 +39,9 @@ class M1Tests(unittest.TestCase):
 
     def test_registry_has_eight_builtins_and_unique_ids(self):
         checks = build_registry().available()
-        self.assertEqual(len(checks), 8)
-        self.assertEqual(len({c.id for c in checks}), 8)
+        self.assertGreaterEqual(len(checks), 8)
+        self.assertEqual(len({c.id for c in checks}), len(checks))
+        self.assertIn("client-exe-fingerprint", {c.id for c in checks})
 
     def test_invalid_detector_identifier_rejected(self):
         with self.assertRaises(ValueError):

@@ -1,4 +1,4 @@
-# M1: checks and extension API
+# M1–M2: checks and extension API
 
 RO Doctor operates only on directories passed to --server and/or --client. Built-in detectors are registered explicitly, with a documented target and a stable check ID.
 
@@ -18,11 +18,16 @@ Check IDs can be repeated. Unknown IDs terminate with exit 2. The CLI does not a
 | server-static | server | yes | Layout and source declarations; not runtime health |
 | server-itemdb | server | yes | Potential partial ItemDB overrides; not an observed price regression |
 | server-sparse-cache | server | yes | Sparse allocation metadata; not certain cache corruption |
+| server-mapcache-structure | server | yes | Actual bounded mapcache structure/count validation; no game execution |
+| server-mapcache-deep | server | no | Bounded zlib map payload validation; not an in-game test |
 | client-static | client | yes | data.ini GRF references, executable filenames and root files |
 | client-grf-header | client | yes | Standard GRF signature and minimum header length; not archive integrity |
 | client-load-order | client | yes | Duplicate/gapped numeric data.ini indices; gaps are not always errors |
 | client-exe-fingerprint | client | no | SHA-256 and optional PE linker metadata; never client release proof |
 | protocol-evidence | combined | yes | Untrusted filename date hints vs source PACKETVER declarations; not a packet handshake |
+| catalog-evidence | client | no (yes if --catalog) | Locally supplied exact client/server SHA-256 pair and reported status, never certification |
+
+M2 format details and the optional catalog schema: [mapcache & compatibility evidence](m2-mapcache-and-catalog.md).
 
 ## Embedding custom checks
 
