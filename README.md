@@ -28,6 +28,17 @@ Details: [checks and extension API](docs/checks.md) and [upstream regression evi
 
 Fingerprint hashes identify file content, **not** Ragexe version or protocol compatibility. The new ItemDB and mapcache checks only flag suspicious patterns and never assert observed runtime bugs. Reports do not include full configuration files, but can include relative names and hashes; review output before making it public.
 
+## M2: binary mapcache checks and local compatibility evidence
+
+M2 verifies actual mapcache binary layout (current 8-byte aligned or documented 6-byte legacy header), declared map count, record offsets and bounds. Opt-in deep verification checks zlib payloads with bounded decompression. It was tested on synthetic fixtures and a public upstream rAthena cache without committing any game data.
+
+It also supports an optional local, reviewable evidence catalog keyed by exact client and server binary SHA-256 hashes. The catalog reports **claims** (pass, fail, unverified), never independently certifies a working login/packet protocol. No source URL is fetched and no executable runs.
+
+    rodoctor --server "D:\rathena" --only-check server-mapcache-deep --format json
+    rodoctor --client "D:\Ragnarok" --catalog "D:\reports\evidence.json" --server-build-sha256 YOUR_64_CHARACTER_SHA256 --only-check catalog-evidence
+
+Full instructions: [M2 mapcache and evidence catalog](docs/m2-mapcache-and-catalog.md). Sample catalogs are intentionally empty; no guessed successful combinations are distributed.
+
 ## Install
 
 Python 3.10+ required. From the repository root:
@@ -65,7 +76,7 @@ For running tests without installing, use PYTHONPATH=src or install the package 
 
 Static findings are intentionally conservative. An executable filename does not prove a compatible build, and a PACKETVER declaration does not prove what a compiled binary uses. Client/server handshake validation is reserved for future isolated test environments.
 
-M0 does not parse credential files, connect to MySQL, run binaries, patch executable files, or touch private assets. No ValkiRO code is included.
+RO Doctor does not parse credential files, connect to MySQL, run binaries, patch executable files, or touch private assets. No ValkiRO code is included.
 
 ## Development
 

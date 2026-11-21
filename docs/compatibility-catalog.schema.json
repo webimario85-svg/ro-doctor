@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webimario85-svg/ro-doctor/blob/main/docs/compatibility-catalog.schema.json",
+  "title": "RO Doctor compatibility evidence catalog v1",
+  "description": "Self-reported evidence, never a certification of client-server protocol compatibility",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "records"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "records": {
+      "type": "array",
+      "maxItems": 2048,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["client_sha256", "server_build_sha256", "status", "evidence"],
+        "properties": {
+          "client_sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+          "server_build_sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+          "status": {"enum": ["pass", "fail", "unverified"]},
+          "evidence": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["observed_at", "method", "source_url"],
+            "properties": {
+              "observed_at": {"type": "string", "format": "date"},
+              "method": {"type": "string", "pattern": "^[A-Za-z0-9 _./-]{3,80}$"},
+              "source_url": {
+                "type": "string",
+                "maxLength": 300,
+                "format": "uri",
+                "pattern": "^https://"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

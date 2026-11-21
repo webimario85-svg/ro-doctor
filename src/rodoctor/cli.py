@@ -29,6 +29,12 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Exclude detector ID(s); repeat to exclude multiple")
     parser.add_argument("--list-checks", action="store_true",
                         help="Print available check IDs and exit (no scan required)")
+    parser.add_argument("--catalog", type=Path,
+                        help="Local evidence catalog JSON (only with --client and server hash)")
+    parser.add_argument("--server-build-sha256", metavar="SHA256",
+                        help="Exact SHA-256 of deployed map-server binary; user-supplied")
+    parser.add_argument("--client-exe", metavar="BASENAME",
+                        help="Exact Ragexe/Ragnarok executable basename when ambiguous")
     parser.add_argument("--version", action="version", version=__version__)
     return parser
 
@@ -36,7 +42,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    registry = build_registry()
+    registry = build_registry(catalog_path=args.catalog,
+                              server_build_sha256=args.server_build_sha256,
+                              client_exe=args.client_exe)
     if args.list_checks:
         for check in registry.available():
             mode = "default" if check.default else "on-demand"
@@ -44,6 +52,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.server is None and args.client is None:
         parser.error("provide --server, --client, or both")
+    if args.catalog is not None and (args.client is None or args.server_build_sha256 is None):
+        parser.error("--catalog requires --client and --server-build-sha256")
+    if args.server_build_sha256 is not None and args.catalog is None:
+        parser.error("--server-build-sha256 requires --catalog")
+    if args.client_exe is not None and args.catalog is None:
+        parser.error("--client-exe requires --catalog")
+    if args.catalog is not None:
+        catalog_file = args.catalog.resolve()
+        for root in (args.server, args.client):
+            if root is not None and catalog_file.is_relative_to(root.resolve()):
+                parser.error("--catalog must be outside scanned directories")
     try:
         registry.select(args.only_check, args.skip_check)
     except ValueError as exc:

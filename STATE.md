@@ -1,34 +1,39 @@
 # RO Doctor — current checkpoint
 
-## Project
-Standalone, public, reusable diagnostic CLI for rAthena and Ragnarok Online clients. Repository: https://github.com/webimario85-svg/ro-doctor . Never copy code, binaries or assets into ValkiRO branches.
+## Goal and guardrails
+Standalone public rAthena/Ragexe diagnostics. Remote: https://github.com/webimario85-svg/ro-doctor . Never put its code or proprietary assets in ValkiRO branches. Scans and fixtures are offline, bounded, read-only; no executable launch, DB connection, automatic plugin import, URL fetch or GitHub Actions.
 
-## Baseline
-M0 released as v0.1.0, commit d2f2c5ef82cb. Original local checkout D:\ro-doctor on main.
+## Completed releases
+- M0 (v0.1.0): original CLI, conservative static checks, text/JSON v1/HTML.
+- M1 (v0.2.0): 8 explicit detectors, ItemDB/import and sparse mapcache advisories (#10098/#10099), GRF header/load order, Ragexe optional fingerprints. PR #1 merged (9670702b5b8fe4aff55b2fb1b622399b234c9681). Main checkpoint before M2: cb5a2eae8c9a05c773f4d1892601f64c3404614b.
 
-## M1 — completed 2026-11-21
-- Independent feature worktree D:\ro-doctor-m1, branch feat/m1-detector-registry, based on d2f2c5ef82cb.
-- New Check/Registry API, eight explicitly registered checks: seven default and one on-demand (EXE SHA-256/PE fingerprint).
-- CLI --list-checks, --only-check and --skip-check. Custom checks require explicit in-process registration, never automatic loading of third-party code.
-- Conservative ItemDB partial import advisories (rAthena #10098); sparse mapcache metadata (rAthena #10099).
-- GRF signature/minimum header, bounded load-order duplicate/gap checks and non-authoritative client/server date evidence.
-- Optional SHA-256 fingerprint for Ragexe-named executables, with 200 MiB limit and PE linker metadata; not a version assertion.
-- Docs: docs/checks.md, docs/upstream-regressions.md, README, SECURITY and AGENTS.md.
-- Package version: 0.2.0. JSON report schema remains v1.
-- QA PASS on NoteNitro5 Windows/Python 3.13: 44/44 unit tests; compileall; CLI JSON and HTML smoke; opt-in fingerprint smoke; wheel build; isolated venv install and CLI; 8 listed detectors; scanned fixtures unchanged by SHA-256.
-- QA logs and synthetic smoke inputs are local ignored .qa/ only. No GH Actions and no dependency on external services.
-- No changes to ValkiRO.
-- PR #1: https://github.com/webimario85-svg/ro-doctor/pull/1 (merged). M1 squash merge on main: 9670702b5b8fe4aff55b2fb1b622399b234c9681.
-- Main branch QA reconfirmed: 44/44 tests PASS, compileall PASS, 8 checks listed.
-- Release tag: v0.2.0 (verify with git tag -l; branch head with this checkpoint: git log -1).
-- Local feature worktree is retained as a QA archive; continue new milestones on a fresh branch, not on merged M1 branch.
+## M2 — 2026-11-21
+Worktree: D:\ro-doctor-m2, branch feat/m2-cache-catalog, based on main cb5a2eae8c9a. Existing worktrees D:\ro-doctor (main) and D:\ro-doctor-m1 (merged M1 branch) kept untouched. Actual feature/merge SHAs and PR number: check current Git, PR and release tag rather than guessing the commit SHA in its own contents.
 
-## Known limitations
-- No runtime handshake or proven effective PACKETVER; filename dates and PE timestamps are not proof of client version.
-- Partial ItemDB parser is intentionally limited (max 256 KiB read); some valid YAML forms are not inspected, and warnings are not runtime price proofs.
-- Sparse attributes and logical size cannot alone prove cache corruption; no binary map-count parser.
-- GRF header checks do not decode contents or prove archive integrity. No custom executable names handled by fingerprint check.
-- No real proprietary client assets or real server binary execution were used in the M1 test matrix.
+Implemented:
+- 11 explicitly registered checks: 8 default, 3 opt-in. New server-mapcache-structure (default), server-mapcache-deep (opt-in), catalog-evidence (opt-in via --catalog).
+- Actual binary mapcache bounds: 8-byte C++ aligned header and documented 6-byte historical fallback, 20-byte map entry; file size, declared count, entry boundaries, dimensions and duplicate map names. Deep zlib check bounds compressed and decompressed byte counts, never writes data.
+- Verified against public rAthena master db/re/map_cache.dat: 28,232 bytes, 8 maps, SHA-256 e871cb73bae86d4be6e32d35ed34cc0456920203f3ffa4687bdba8eedaf627fd. All eight maps' compressed payloads validated. Public reference file is ONLY in ignored .qa, not Git.
+- Local SHA-256 compatibility evidence catalog v1 with explicit client binary hash and user-supplied deployed server binary hash, reported pass/fail/unverified statuses, ISO observation date, test method and HTTPS source (not fetched). Ambiguous clients and conflicting reports flagged, never certified as verified protocol compatibility.
+- New CLI --catalog, --server-build-sha256 and --client-exe; new mapcache docs, empty catalog example, JSON catalog schema, security notes, version 0.3.0. Machine-readable diagnostic report schema remains v1.
+- All new tests are synthetic: no proprietary GRFs, server binaries or ValkiRO files committed.
 
-## Next priority — M2
-Improve bounded safe parsing and version evidence with documented fixture corpus, actual mapcache header count validation against format, optional SHA-256 compatibility catalog with provenance and explicit test status, and cross-platform packaging QA. Do not auto-update files or use unverified compatibility claims.
+## M2 actual QA
+- Windows NoteNitro5 Python 3.13.15: 76/76 unit tests PASS, compileall PASS, schema JSON parse PASS, universal wheel build PASS.
+- Windows isolated venv: pip install of v0.3.0 wheel PASS. CLI JSON/HTML, real upstream mapcache deep zlib, opt-in catalog (unverified result) and SHA-256 read-only fixture integrity PASS.
+- WSL Ubuntu Python 3.14.4: 76/76 unit tests PASS, compileall PASS, 11 checks enumerated. WSL did not have pip; do not claim pip-based install in WSL.
+- Docker python:3.13-alpine, network disabled, read-only filesystem/repository: 76/76 tests PASS; universal wheel zipimport version 0.3.0 and 8-map deep-zlib smoke PASS.
+- VPS alta-dev SSH was unreachable (connection timeout); Linux tests were performed locally via WSL and Docker instead.
+- Complete QA logs, wheel and reference fixture in ignored .qa/; no GitHub Actions.
+
+## Remaining limitations
+- Catalog records are self-reported, source URLs are not checked and user-provided server SHA is not attested. A hash match alone is not a successful handshake.
+- Mapcache parser handles 8-byte and 6-byte layouts only; supports at most 8192 maps, 512 MiB file, 8 MiB uncompressed cells per entry and 16 MiB compressed payload for deep verification.
+- No full GRF decoding, no authenticated client/server protocol tests, no automated cache repairs or binary patching.
+- Minimum declared supported Python is 3.10; real QA covered Windows 3.13 and Linux 3.13/3.14, not Python 3.10.
+
+## Next priority — M3
+1. Improve provenance and test-case interoperability for recorded compatibility, without claiming verified support until a real authorized test passes.
+2. Cross-check mapcache names against map index with bounded parser and avoid false positives for custom maps.
+3. Add Linux wheel-install smoke where pip is available and release automation through trusted local executors (no GitHub Actions).
+4. Continue from this checkpoint plus current branch/worktree/PR and upstream state; do not replay prior milestones or overwrite parallel work.
