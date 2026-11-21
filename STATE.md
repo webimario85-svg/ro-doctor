@@ -8,7 +8,7 @@ Standalone public rAthena/Ragexe diagnostics. Remote: https://github.com/webimar
 - M1 (v0.2.0): 8 explicit detectors, ItemDB/import and sparse mapcache advisories (#10098/#10099), GRF header/load order, Ragexe optional fingerprints. PR #1 merged (9670702b5b8fe4aff55b2fb1b622399b234c9681). Main checkpoint before M2: cb5a2eae8c9a05c773f4d1892601f64c3404614b.
 
 ## M2 — 2026-11-21
-Worktree: D:\ro-doctor-m2, branch feat/m2-cache-catalog, based on main cb5a2eae8c9a. Existing worktrees D:\ro-doctor (main) and D:\ro-doctor-m1 (merged M1 branch) kept untouched. Actual feature/merge SHAs and PR number: check current Git, PR and release tag rather than guessing the commit SHA in its own contents.
+Worktree: D:\ro-doctor-m2, branch feat/m2-cache-catalog, based on main cb5a2eae8c9a. Existing worktrees D:\ro-doctor (main) and D:\ro-doctor-m1 (merged M1 branch) kept untouched. Feature commit 29c77298cf342e39a1342dc5493bd8309662424e. PR #2 https://github.com/webimario85-svg/ro-doctor/pull/2 merged via squash to main c191e86c87eea5778131a80469a436cb54a32f97. Post-merge Windows main QA: 76/76 PASS, compileall PASS, 11 checks. M2 release tag v0.3.0 (verify with git tag -l and git log -1; checkpoint commit SHA necessarily follows the text it introduces).
 
 Implemented:
 - 11 explicitly registered checks: 8 default, 3 opt-in. New server-mapcache-structure (default), server-mapcache-deep (opt-in), catalog-evidence (opt-in via --catalog).
