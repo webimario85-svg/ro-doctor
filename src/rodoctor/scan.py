@@ -216,30 +216,73 @@ def _scan_client(root: Path, report: Report) -> None:
                    "Verify section name, encoding, and asset load order.", ini.name)
 
 
-def scan(server: Path | None = None, client: Path | None = None) -> Report:
-    """Perform a read-only scan. No files or settings are written."""
+def build_registry():
+    """Return fresh built-ins so users can extend without mutating global state."""
+    from .checks import Check, Registry
+    from . import enhanced
+
+    registry = Registry()
+    registry.register(Check("server-static", "server",
+                            "rAthena layout, PACKETVER declarations, mapcache metadata",
+                            lambda server, client, report: _scan_server(server, report)))
+    registry.register(Check("server-itemdb", "server",
+                            "Conservative partial ItemDB override review (#10098)",
+                            enhanced.itemdb_partial_import))
+    registry.register(Check("server-sparse-cache", "server",
+                            "Sparse mapcache metadata review (#10099)",
+                            enhanced.mapcache_sparse))
+    registry.register(Check("client-static", "client",
+                            "Client executable, assets, and data.ini GRF references",
+                            lambda server, client, report: _scan_client(client, report)))
+    registry.register(Check("client-grf-header", "client",
+                            "Local GRF archive signatures and minimum header length",
+                            enhanced.grf_headers))
+    registry.register(Check("client-load-order", "client",
+                            "Duplicate or discontinuous data.ini GRF indices",
+                            enhanced.load_order))
+    registry.register(Check("client-exe-fingerprint", "client",
+                            "On-demand SHA-256 and PE header metadata for client executable(s)",
+                            enhanced.exe_fingerprint, default=False))
+    registry.register(Check("protocol-evidence", "combined",
+                            "Non-authoritative client filename vs source PACKETVER hints",
+                            enhanced.protocol_evidence))
+    return registry
+
+
+def scan(server: Path | None = None, client: Path | None = None, *,
+         only: list[str] | None = None,
+         skip: list[str] | None = None,
+         registry=None) -> Report:
+    """Read-only scan using explicitly registered checks. Never loads plugins from disk."""
     report = Report()
-    for subject, supplied, check in (
-        ("server", server, _scan_server),
-        ("client", client, _scan_client),
-    ):
-        if supplied is None:
+    selected = (registry if registry is not None else build_registry()).select(only, skip)
+    paths = {"server": Path(server).expanduser() if server is not None else None,
+             "client": Path(client).expanduser() if client is not None else None}
+    valid = {"server": False, "client": False}
+    for subject, path in paths.items():
+        if path is None:
             continue
-        path = Path(supplied).expanduser()
-        # Only the directory name appears in output; no absolute paths or secrets.
         report.targets[subject] = path.name or subject
         try:
-            valid = path.is_dir()
+            valid[subject] = path.is_dir()
         except OSError:
-            valid = False
-        if not valid:
+            pass
+        if not valid[subject]:
             report.add("TARGET_NOT_DIRECTORY", "error", subject,
                        "Supplied target does not exist or is not a readable directory.",
                        f"Provide an existing {subject} directory.")
+    for check in selected:
+        if check.target == "combined":
+            enabled = valid["server"] and valid["client"]
+        else:
+            enabled = valid[check.target]
+        if not enabled:
             continue
-        check(path, report)
-    if server is not None and client is not None:
-        report.add("PROTOCOL_NOT_VERIFIED", "info", "compatibility",
-                   "Static inspection cannot establish Ragexe-to-server protocol compatibility.",
-                   "Run a separate isolated client/server handshake test before claiming support.")
+        try:
+            check.run(paths["server"], paths["client"], report)
+        except Exception:
+            # Do not leak exception text containing local directories or secrets.
+            report.add("CHECK_EXECUTION_FAILED", "error", check.target,
+                       f"Detector '{check.id}' failed unexpectedly.",
+                       "Report a sanitized reproduction to RO Doctor maintainers.")
     return report

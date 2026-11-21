@@ -4,6 +4,7 @@
 - Read-only by default. Do not launch executables, connect to databases, mutate game folders, or contact the network during scanning.
 - Prefer explicit evidence over guessed compatibility. Mark uncertain checks as unknown/informational.
 - Stdlib-first Python. Tests with synthetic fixtures before release.
+- M1 checks live in a registry with explicit IDs. Never auto-load third-party Python packages during scanning; on-demand binary hashing is opt-in only.
 - Before editing: inspect branch, status, worktrees, HEAD, and concurrent work. Never overwrite other worktrees.
 - Keep durable progress only in STATE.md; do not duplicate checkpoints.
 - QA: python -m unittest discover -s tests -v; python -m compileall -q src; CLI smoke test.
