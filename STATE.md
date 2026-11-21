@@ -18,7 +18,10 @@ M0 released as v0.1.0, commit d2f2c5ef82cb. Original local checkout D:\ro-doctor
 - QA PASS on NoteNitro5 Windows/Python 3.13: 44/44 unit tests; compileall; CLI JSON and HTML smoke; opt-in fingerprint smoke; wheel build; isolated venv install and CLI; 8 listed detectors; scanned fixtures unchanged by SHA-256.
 - QA logs and synthetic smoke inputs are local ignored .qa/ only. No GH Actions and no dependency on external services.
 - No changes to ValkiRO.
-- PR and merge revision: consult current GitHub PR for feat/m1-detector-registry and git log -1 (the checkpoint must not predict its own SHA).
+- PR #1: https://github.com/webimario85-svg/ro-doctor/pull/1 (merged). M1 squash merge on main: 9670702b5b8fe4aff55b2fb1b622399b234c9681.
+- Main branch QA reconfirmed: 44/44 tests PASS, compileall PASS, 8 checks listed.
+- Release tag: v0.2.0 (verify with git tag -l; branch head with this checkpoint: git log -1).
+- Local feature worktree is retained as a QA archive; continue new milestones on a fresh branch, not on merged M1 branch.
 
 ## Known limitations
 - No runtime handshake or proven effective PACKETVER; filename dates and PE timestamps are not proof of client version.
