@@ -1,4 +1,4 @@
-# M1–M3: checks and extension API
+# M1–M4: checks and extension API
 
 RO Doctor operates only on directories passed to --server and/or --client. Built-in detectors are registered explicitly, with a documented target and a stable check ID.
 
@@ -30,7 +30,7 @@ Check IDs can be repeated. Unknown IDs terminate with exit 2. The CLI does not a
 | catalog-provenance | client | no (yes if --catalog) | Offline hash/repetition/conflict/date audit, not source authentication |
 | case-evidence | client | no (yes if --case-file) | Portable QA test-case JSON and user-supplied log digest, never handshake proof |
 
-M2 formats: [mapcache & compatibility evidence](m2-mapcache-and-catalog.md). M3: [map index and portable test cases](m3-map-index-provenance.md).
+M2 formats: [mapcache & compatibility evidence](m2-mapcache-and-catalog.md). M3: [map index and portable test cases](m3-map-index-provenance.md). M4: [Athena TestLab file-exchange contract and optional log verification](athena-testlab-contract.md). M4 adds --map-index for bounded custom relative map index paths (up to 16 per scan) and --case-log for checking an explicitly supplied local log against the case digest. Neither alters the 14 detector IDs or the report JSON v1 schema.
 
 ## Embedding custom checks
 

@@ -54,5 +54,5 @@ If the catalog is malformed, the audit avoids echoing its contents or local file
 - Tests are metadata and static checks, not execution of a game client.
 - Only recognized local map index paths are parsed; custom/other index file locations are not automatically discovered.
 - Custom map names and mismatches are informational to minimize false positives.
-- An observed_at date and user-supplied test log digest cannot prove authenticity.
+- An observed_at date and user-supplied test log digest cannot prove authenticity. M4 optionally reads an explicitly supplied local log via --case-log to verify its bytes against the digest; this still cannot prove a real handshake.
 - No GitHub Actions. Cross-platform QA uses Windows, WSL and isolated local Docker when available.

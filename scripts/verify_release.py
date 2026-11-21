@@ -45,8 +45,14 @@ def main():
     print("JSON_DOCUMENTS=PASS")
     run(["-B", "-m", "unittest", "discover", "-s", "tests", "-q"],
         root, env, "UNIT_TESTS")
-    run(["-B", "-m", "compileall", "-q", "src", "tests"],
-        root, env, "PYTHON_COMPILE")
+    # Validate syntax directly in memory, including when the source tree is read-only.
+    sources = sorted((root / "src").rglob("*.py")) + sorted((root / "tests").rglob("*.py"))
+    try:
+        for source in sources:
+            compile(source.read_bytes(), str(source.relative_to(root)), "exec")
+    except (OSError, SyntaxError):
+        raise SystemExit("PYTHON_COMPILE=FAIL") from None
+    print(f"PYTHON_COMPILE=PASS ({len(sources)} files; no pycache writes)")
     if args.skip_wheel:
         print("WHEEL=SKIPPED")
         print(f"RELEASE_PREFLIGHT=PASS version={version} (wheel not checked)")

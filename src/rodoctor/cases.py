@@ -9,7 +9,7 @@ from pathlib import Path
 import re
 from urllib.parse import urlsplit
 
-from . import catalog
+from . import catalog, logverify
 from .model import Report
 
 MAX_CASE_BYTES = 64 * 1024
@@ -81,7 +81,7 @@ def read_case(path: Path) -> dict:
 
 def inspect(client: Path, path: Path | None, server_sha: str | None,
             client_exe: str | None, catalog_path: Path | None,
-            report: Report) -> None:
+            report: Report, log_path: Path | None = None) -> None:
     if path is None or server_sha is None:
         report.add("CASE_NOT_CONFIGURED", "info", "compatibility",
                    "No case artifact and server build hash supplied.",
@@ -112,6 +112,9 @@ def inspect(client: Path, path: Path | None, server_sha: str | None,
                    "Reported test date is in the future.",
                    "Verify test artifact provenance and clock settings.")
         return
+    if log_path is not None and not logverify.verify(case, log_path, report):
+        # Invalid or missing log bytes must not be accompanied by a PASS claim.
+        return
     if case["status"] == "pass":
         code, level = "CASE_REPORTED_PASS", "info"
     elif case["status"] == "fail":
@@ -120,8 +123,10 @@ def inspect(client: Path, path: Path | None, server_sha: str | None,
         code, level = "CASE_UNVERIFIED", "info"
     report.add(code, level, "compatibility",
                f"Test case '{case['case_id']}' reports {case['status']} "
-               f"for '{case['scenario']}' via {case['runner']}; "
-               "the log checksum and source were not independently verified.",
+               f"for '{case['scenario']}' via {case['runner']}; " +
+               ("the supplied log checksum matches, but the outcome and source were not verified."
+                if log_path is not None else
+                "the log checksum and source were not independently verified."),
                "Reproduce the claimed result in an authorized isolated client/server test.")
     if catalog_path is None:
         return
@@ -139,8 +144,9 @@ def inspect(client: Path, path: Path | None, server_sha: str | None,
 
 
 def detector(path: Path | None, server_sha: str | None,
-             client_exe: str | None, catalog_path: Path | None):
+             client_exe: str | None, catalog_path: Path | None,
+             log_path: Path | None = None):
     def run(server: Path | None, client: Path | None, report: Report) -> None:
         assert client is not None
-        inspect(client, path, server_sha, client_exe, catalog_path, report)
+        inspect(client, path, server_sha, client_exe, catalog_path, report, log_path)
     return run

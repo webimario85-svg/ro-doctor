@@ -18,6 +18,21 @@ MAX_INDEX_BYTES = 2 * 1024 * 1024
 MAX_INDEX_LINES = 65536
 INDEX_LINE = re.compile(r"^([A-Za-z0-9_@-]{1,24})(?:\s+(\d{1,8}))?\s*$")
 MAX_INDEX_IDS = 200_000
+MAX_EXTRA_PATHS = 16
+
+
+def normalize_extra_index(value: str) -> str | None:
+    """Only allow explicit, relative text paths inside the selected server root."""
+    if not isinstance(value, str):
+        return None
+    norm = value.replace("\\", "/")
+    parts = norm.split("/")
+    if (not norm or len(norm) > 220 or norm.startswith("/") or ":" in norm
+            or len(parts) > 12 or any(p in ("", ".", "..") for p in parts)
+            or not re.fullmatch(r"[A-Za-z0-9_ @./-]+", norm)
+            or not norm.lower().endswith(".txt")):
+        return None
+    return norm
 
 
 def _safe_file(root: Path, name: str) -> Path | None:
@@ -84,10 +99,26 @@ def _cache_names(path: Path) -> tuple[list[tuple[str, bool]], bool]:
     return result, True
 
 
-def compare(server: Path | None, client: Path | None, report: Report) -> None:
+def compare(server: Path | None, client: Path | None, report: Report,
+            extra_indices: tuple[str, ...] = ()) -> None:
     assert server is not None
     root = server
-    indexes = [p for name in INDEX_PATHS if (p := _safe_file(root, name))]
+    if len(extra_indices) > MAX_EXTRA_PATHS:
+        report.add("MAP_INDEX_PROVIDER_REJECTED", "warning", "server",
+                   "Too many explicit map index providers.",
+                   "Provide at most 16 relative index files.")
+        return
+    wanted = list(INDEX_PATHS)
+    for raw in extra_indices:
+        name = normalize_extra_index(raw)
+        if name is None or _safe_file(root, name) is None:
+            report.add("MAP_INDEX_PROVIDER_REJECTED", "warning", "server",
+                       "An explicit map index path was invalid, absent or outside the server root.",
+                       "Use an existing relative .txt path under --server.")
+            continue
+        if name not in wanted:
+            wanted.append(name)
+    indexes = [p for name in wanted if (p := _safe_file(root, name))]
     caches = [p for name in CACHE_PATHS if (p := _safe_file(root, name))]
     if not indexes or not caches:
         return
@@ -141,3 +172,9 @@ def compare(server: Path | None, client: Path | None, report: Report) -> None:
         report.add("MAP_INDEX_COMPARE_COMPLETE", "info", "server",
                    f"Compared {checked} cached map name(s) against local index entries.",
                    "This verifies names only, not whether all indexed maps should be cached.")
+
+
+def detector(extra_indices: tuple[str, ...] = ()):
+    def run(server: Path | None, client: Path | None, report: Report) -> None:
+        compare(server, client, report, extra_indices)
+    return run
