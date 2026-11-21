@@ -216,10 +216,11 @@ def _scan_client(root: Path, report: Report) -> None:
                    "Verify section name, encoding, and asset load order.", ini.name)
 
 
-def build_registry(*, catalog_path=None, server_build_sha256=None, client_exe=None):
+def build_registry(*, catalog_path=None, server_build_sha256=None,
+                   client_exe=None, case_file=None):
     """Return fresh built-ins so users can extend without mutating global state."""
     from .checks import Check, Registry
-    from . import catalog, enhanced, mapcache
+    from . import catalog, catalog_audit, cases, enhanced, mapcache, mapindex
 
     registry = Registry()
     registry.register(Check("server-static", "server",
@@ -237,6 +238,9 @@ def build_registry(*, catalog_path=None, server_build_sha256=None, client_exe=No
     registry.register(Check("server-mapcache-deep", "server",
                             "On-demand bounded zlib payload validation for mapcache",
                             mapcache.deep_payloads, default=False))
+    registry.register(Check("server-map-index", "server",
+                            "Conservative mapcache names versus inter-server map_index",
+                            mapindex.compare))
     registry.register(Check("client-static", "client",
                             "Client executable, assets, and data.ini GRF references",
                             lambda server, client, report: _scan_client(client, report)))
@@ -256,6 +260,14 @@ def build_registry(*, catalog_path=None, server_build_sha256=None, client_exe=No
                             "Opt-in exact client/server build SHA-256 pair evidence catalog",
                             catalog.detector(catalog_path, server_build_sha256, client_exe),
                             default=catalog_path is not None))
+    registry.register(Check("catalog-provenance", "client",
+                            "Audit source catalog hash, self-reported outcomes and conflicts",
+                            catalog_audit.detector(catalog_path),
+                            default=catalog_path is not None))
+    registry.register(Check("case-evidence", "client",
+                            "Validate structured, hashed QA case from external test runner",
+                            cases.detector(case_file, server_build_sha256, client_exe, catalog_path),
+                            default=case_file is not None))
     return registry
 
 
@@ -264,12 +276,13 @@ def scan(server: Path | None = None, client: Path | None = None, *,
          skip: list[str] | None = None,
          registry=None, catalog_path: Path | None = None,
          server_build_sha256: str | None = None,
-         client_exe: str | None = None) -> Report:
+         client_exe: str | None = None,
+         case_file: Path | None = None) -> Report:
     """Read-only scan using explicitly registered checks. Never loads plugins from disk."""
     report = Report()
     selected = (registry if registry is not None else build_registry(
         catalog_path=catalog_path, server_build_sha256=server_build_sha256,
-        client_exe=client_exe)).select(only, skip)
+        client_exe=client_exe, case_file=case_file)).select(only, skip)
     paths = {"server": Path(server).expanduser() if server is not None else None,
              "client": Path(client).expanduser() if client is not None else None}
     valid = {"server": False, "client": False}

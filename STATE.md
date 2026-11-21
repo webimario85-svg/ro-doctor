@@ -1,39 +1,39 @@
 # RO Doctor — current checkpoint
 
 ## Goal and guardrails
-Standalone public rAthena/Ragexe diagnostics. Remote: https://github.com/webimario85-svg/ro-doctor . Never put its code or proprietary assets in ValkiRO branches. Scans and fixtures are offline, bounded, read-only; no executable launch, DB connection, automatic plugin import, URL fetch or GitHub Actions.
+Public, independent read-only diagnostics for rAthena/Ragexe. Repo: https://github.com/webimario85-svg/ro-doctor .
+Never copy private server files, executables or ValkiRO assets into this repository. No GitHub Actions, no automatic game execution, network fetch during scans, DB writes, binary patches or invented protocol compatibility claims. Keep one current checkpoint in this file, and concise rules in AGENTS.md.
 
-## Completed releases
-- M0 (v0.1.0): original CLI, conservative static checks, text/JSON v1/HTML.
-- M1 (v0.2.0): 8 explicit detectors, ItemDB/import and sparse mapcache advisories (#10098/#10099), GRF header/load order, Ragexe optional fingerprints. PR #1 merged (9670702b5b8fe4aff55b2fb1b622399b234c9681). Main checkpoint before M2: cb5a2eae8c9a05c773f4d1892601f64c3404614b.
+## Release history
+- M0 v0.1.0: conservative offline client/server checks; reports text/JSON v1/HTML.
+- M1 v0.2.0, merged PR #1: explicit detectors, ItemDB/mapcache advisories, GRF checks and optional EXE fingerprint.
+- M2 v0.3.0, merged PR #2: bounded binary mapcache parsing, opt-in zlib validation and local SHA-256 compatibility evidence. Previous main checkpoint d1bb4b13682274b5c57ae57ab080fc279d0130b0.
 
-## M2 — 2026-11-21
-Worktree: D:\ro-doctor-m2, branch feat/m2-cache-catalog, based on main cb5a2eae8c9a. Existing worktrees D:\ro-doctor (main) and D:\ro-doctor-m1 (merged M1 branch) kept untouched. Feature commit 29c77298cf342e39a1342dc5493bd8309662424e. PR #2 https://github.com/webimario85-svg/ro-doctor/pull/2 merged via squash to main c191e86c87eea5778131a80469a436cb54a32f97. Post-merge Windows main QA: 76/76 PASS, compileall PASS, 11 checks. M2 release tag v0.3.0 (verify with git tag -l and git log -1; checkpoint commit SHA necessarily follows the text it introduces).
+## M3 delivered — 2026-11-21
+- Feature branch feat/m3-mapindex-provenance in D:\ro-doctor-m3; base main d1bb4b13682274b5c57ae57ab080fc279d0130b0. Main worktree: D:\ro-doctor. Earlier M1 and M2 worktrees were not touched. Confirm HEAD and PR through Git.
+- 14 registered detectors total. New default server-map-index compares cached names with local db/map_index.txt, db/import/map_index.txt and root map_index.txt. Parses bounded maps/indexes and treats custom, truncated and missing names conservatively as INFO only. It never requires all indexed maps to be in the cache.
+- New optional case-evidence detector and --case-file: portable JSON Schema v1 for external QA records, with case/scenario/runner, exact client and server build SHA-256, reported pass/fail/unverified, date, log SHA-256 and HTTPS provenance text. A log digest is mandatory for reported pass/fail but is never independently verified. The tool never certifies protocol compatibility.
+- New optional catalog-provenance detector audits local catalog SHA-256, duplicates, conflicting outcomes and future dates. Case versus catalog contradictions are flagged for the exact binary pair.
+- Offline scripts/verify_release.py checks version sync, JSON documents, unit tests, compileall and a universal wheel build/structure when pip is available. No tag, commit, release or other Git mutations by the script.
+- Docs: docs/m3-map-index-provenance.md; docs/test-case.schema.json and synthetic unverified example; updated README/AGENTS/SECURITY/checks.
+- Version 0.4.0; report JSON schema remains v1. No new external runtime dependencies.
 
-Implemented:
-- 11 explicitly registered checks: 8 default, 3 opt-in. New server-mapcache-structure (default), server-mapcache-deep (opt-in), catalog-evidence (opt-in via --catalog).
-- Actual binary mapcache bounds: 8-byte C++ aligned header and documented 6-byte historical fallback, 20-byte map entry; file size, declared count, entry boundaries, dimensions and duplicate map names. Deep zlib check bounds compressed and decompressed byte counts, never writes data.
-- Verified against public rAthena master db/re/map_cache.dat: 28,232 bytes, 8 maps, SHA-256 e871cb73bae86d4be6e32d35ed34cc0456920203f3ffa4687bdba8eedaf627fd. All eight maps' compressed payloads validated. Public reference file is ONLY in ignored .qa, not Git.
-- Local SHA-256 compatibility evidence catalog v1 with explicit client binary hash and user-supplied deployed server binary hash, reported pass/fail/unverified statuses, ISO observation date, test method and HTTPS source (not fetched). Ambiguous clients and conflicting reports flagged, never certified as verified protocol compatibility.
-- New CLI --catalog, --server-build-sha256 and --client-exe; new mapcache docs, empty catalog example, JSON catalog schema, security notes, version 0.3.0. Machine-readable diagnostic report schema remains v1.
-- All new tests are synthetic: no proprietary GRFs, server binaries or ValkiRO files committed.
+## Actual M3 QA
+- Windows NoteNitro5 / Python 3.13.15: 109/109 unittest PASS, compileall PASS, schema JSON parse PASS, offline wheel build & structure PASS; isolated venv wheel installation and installed CLI PASS.
+- Windows smoke: public upstream map_cache.dat (28232 bytes, 8 maps) versus public db/map_index.txt (13341 bytes); all 8 cache names matched, no warning/error; synthetic case CLI reported CASE_UNVERIFIED, input binary SHA-256 unchanged.
+- WSL Ubuntu / Python 3.14.4: 109/109 tests and offline preflight (wheel skipped because pip unavailable) PASS.
+- Docker python:3.13-alpine with --network none, read-only repo/root and tempfs: 109/109 unit tests PASS, actual wheel install into ephemeral /tmp PASS, installed CLI comparison against public upstream files PASS.
+- Upstream public mapcache and index copied only into ignored .qa/ for local QA, not Git; all test suite fixtures synthetic. All QA stdout/logs and build wheel kept under ignored .qa/.
+- VPS was unreachable during M2; M3 Linux QA did not require it. No changes to ValkiRO.
 
-## M2 actual QA
-- Windows NoteNitro5 Python 3.13.15: 76/76 unit tests PASS, compileall PASS, schema JSON parse PASS, universal wheel build PASS.
-- Windows isolated venv: pip install of v0.3.0 wheel PASS. CLI JSON/HTML, real upstream mapcache deep zlib, opt-in catalog (unverified result) and SHA-256 read-only fixture integrity PASS.
-- WSL Ubuntu Python 3.14.4: 76/76 unit tests PASS, compileall PASS, 11 checks enumerated. WSL did not have pip; do not claim pip-based install in WSL.
-- Docker python:3.13-alpine, network disabled, read-only filesystem/repository: 76/76 tests PASS; universal wheel zipimport version 0.3.0 and 8-map deep-zlib smoke PASS.
-- VPS alta-dev SSH was unreachable (connection timeout); Linux tests were performed locally via WSL and Docker instead.
-- Complete QA logs, wheel and reference fixture in ignored .qa/; no GitHub Actions.
+## Important limits
+- Map index paths are explicitly recognized local files, not a discovery of arbitrary custom map servers; cached-only names are informational.
+- Neither a catalog SHA nor a test-case log hash establishes authorship or real execution. Source URL contents are never fetched. Users must perform authorized isolated handshake tests independently.
+- Real QA versions: Windows 3.13, Linux 3.13 and 3.14. Python 3.10 remains declared supported but untested in this session.
+- No automatic mapcache remediation, GRF extraction, client patching, or server instrumentation.
 
-## Remaining limitations
-- Catalog records are self-reported, source URLs are not checked and user-provided server SHA is not attested. A hash match alone is not a successful handshake.
-- Mapcache parser handles 8-byte and 6-byte layouts only; supports at most 8192 maps, 512 MiB file, 8 MiB uncompressed cells per entry and 16 MiB compressed payload for deep verification.
-- No full GRF decoding, no authenticated client/server protocol tests, no automated cache repairs or binary patching.
-- Minimum declared supported Python is 3.10; real QA covered Windows 3.13 and Linux 3.13/3.14, not Python 3.10.
-
-## Next priority — M3
-1. Improve provenance and test-case interoperability for recorded compatibility, without claiming verified support until a real authorized test passes.
-2. Cross-check mapcache names against map index with bounded parser and avoid false positives for custom maps.
-3. Add Linux wheel-install smoke where pip is available and release automation through trusted local executors (no GitHub Actions).
-4. Continue from this checkpoint plus current branch/worktree/PR and upstream state; do not replay prior milestones or overwrite parallel work.
+## Next priority — M4
+1. Reproducible evidence exchange between Athena TestLab and RO Doctor, with independently verifiable local log checksum when explicitly supplied.
+2. Inter-server index policy and custom map configuration providers, informed by upstream rAthena behavior; avoid false positive errors.
+3. Larger adversarial corpus, fuzz/property tests and Python 3.10 compatibility with isolated local executors.
+4. Resume from STATE.md plus real Git/worktrees/PR and last QA; do not replay or overwrite parallel branches.

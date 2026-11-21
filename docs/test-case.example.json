@@ -1,0 +1,12 @@
+{
+  "schema_version": "1",
+  "case_id": "synthetic-example-only",
+  "scenario": "login-handshake",
+  "client_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "server_build_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "status": "unverified",
+  "observed_at": "2026-11-21",
+  "runner": "synthetic-example",
+  "log_sha256": null,
+  "source_url": "https://github.com/webimario85-svg/ro-doctor"
+}

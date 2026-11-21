@@ -35,6 +35,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Exact SHA-256 of deployed map-server binary; user-supplied")
     parser.add_argument("--client-exe", metavar="BASENAME",
                         help="Exact Ragexe/Ragnarok executable basename when ambiguous")
+    parser.add_argument("--case-file", type=Path,
+                        help="Local external QA test-case JSON with exact hashes and log digest")
     parser.add_argument("--version", action="version", version=__version__)
     return parser
 
@@ -44,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     registry = build_registry(catalog_path=args.catalog,
                               server_build_sha256=args.server_build_sha256,
-                              client_exe=args.client_exe)
+                              client_exe=args.client_exe, case_file=args.case_file)
     if args.list_checks:
         for check in registry.available():
             mode = "default" if check.default else "on-demand"
@@ -52,17 +54,19 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.server is None and args.client is None:
         parser.error("provide --server, --client, or both")
-    if args.catalog is not None and (args.client is None or args.server_build_sha256 is None):
-        parser.error("--catalog requires --client and --server-build-sha256")
-    if args.server_build_sha256 is not None and args.catalog is None:
-        parser.error("--server-build-sha256 requires --catalog")
-    if args.client_exe is not None and args.catalog is None:
-        parser.error("--client-exe requires --catalog")
-    if args.catalog is not None:
-        catalog_file = args.catalog.resolve()
+    evidence_files = (("--catalog", args.catalog), ("--case-file", args.case_file))
+    if any(path is not None for _, path in evidence_files):
+        if args.client is None or args.server_build_sha256 is None:
+            parser.error("--catalog/--case-file requires --client and --server-build-sha256")
+    elif args.server_build_sha256 is not None or args.client_exe is not None:
+        parser.error("--server-build-sha256 and --client-exe require --catalog or --case-file")
+    for label, path in evidence_files:
+        if path is None:
+            continue
+        source = path.resolve()
         for root in (args.server, args.client):
-            if root is not None and catalog_file.is_relative_to(root.resolve()):
-                parser.error("--catalog must be outside scanned directories")
+            if root is not None and source.is_relative_to(root.resolve()):
+                parser.error(f"{label} must be outside scanned directories")
     try:
         registry.select(args.only_check, args.skip_check)
     except ValueError as exc:
@@ -76,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--output must be a file, not a directory")
 
     report = scan(args.server, args.client, only=args.only_check,
-                  skip=args.skip_check, registry=registry)
+                  skip=args.skip_check, registry=registry, case_file=args.case_file)
     rendered = FORMATS[args.format](report)
     if args.output is None:
         sys.stdout.write(rendered)

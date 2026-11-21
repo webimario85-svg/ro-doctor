@@ -39,6 +39,18 @@ It also supports an optional local, reviewable evidence catalog keyed by exact c
 
 Full instructions: [M2 mapcache and evidence catalog](docs/m2-mapcache-and-catalog.md). Sample catalogs are intentionally empty; no guessed successful combinations are distributed.
 
+## M3: map index consistency and portable QA evidence
+
+M3 adds a conservative comparison between cached map names and local rAthena map_index.txt files. Custom maps, missing index entries and truncated names produce informational findings, not automatic failures. Real upstream mapcache and map index were cross-checked without committing game assets.
+
+For compatibility evidence, independent QA tools can emit a strictly structured test-case JSON with exact client/server hashes, reported status and log checksum. RO Doctor verifies the schema and exact binary pair, **not** whether the referenced test actually ran. Catalog provenance audits show duplicate reports, contradictory outcomes and the local catalog revision fingerprint.
+
+    rodoctor --server "D:\rathena" --only-check server-map-index --format json
+    rodoctor --client "D:\Ragnarok" --server-build-sha256 REAL_64_CHARACTER_HASH --case-file "D:\reports\test-case.json" --only-check case-evidence
+    rodoctor --client "D:\Ragnarok" --server-build-sha256 REAL_64_CHARACTER_HASH --catalog "D:\reports\catalog.json" --only-check catalog-provenance
+
+Detailed guide: [M3 map index and test-case evidence](docs/m3-map-index-provenance.md). Open format: [test-case JSON Schema v1](docs/test-case.schema.json). Fully offline release preflight (Python 3.10+): `python scripts/verify_release.py`.
+
 ## Install
 
 Python 3.10+ required. From the repository root:

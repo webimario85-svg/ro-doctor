@@ -77,9 +77,10 @@ class M2Tests(unittest.TestCase):
     def codes(self, result):
         return [x.code for x in result.findings]
 
-    def test_registry_adds_three_m2_detectors(self):
+    def test_registry_preserves_m2_detectors(self):
         all_checks = {c.id: c for c in build_registry().available()}
-        self.assertEqual(len(all_checks), 11)
+        self.assertGreaterEqual(len(all_checks), 11)
+        self.assertEqual(len(all_checks), len(build_registry().available()))
         self.assertFalse(all_checks["server-mapcache-deep"].default)
         self.assertFalse(all_checks["catalog-evidence"].default)
         self.assertTrue(all_checks["server-mapcache-structure"].default)
