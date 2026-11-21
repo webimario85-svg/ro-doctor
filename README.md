@@ -16,6 +16,18 @@ RO Doctor helps discover actionable configuration and asset problems without lau
 - Reports only relative file paths and selected directory names; never secret-bearing config contents.
 - No network, game process, proprietary assets, or external Python dependencies.
 
+## M1: extensible checks and compatibility evidence
+
+The M1 release adds an explicit detector registry, non-invasive GRF header checks, data.ini load-order quality checks, sparse mapcache metadata, and partial ItemDB import advisories. It also adds untrusted date hints for PACKETVER comparisons and an **opt-in** SHA-256 + PE header fingerprint for Ragexe executables.
+
+    rodoctor --list-checks
+    rodoctor --server "D:\rathena" --client "D:\Ragnarok" --skip-check client-grf-header
+    rodoctor --client "D:\Ragnarok" --only-check client-exe-fingerprint --format json --output report.json
+
+Details: [checks and extension API](docs/checks.md) and [upstream regression evidence](docs/upstream-regressions.md).
+
+Fingerprint hashes identify file content, **not** Ragexe version or protocol compatibility. The new ItemDB and mapcache checks only flag suspicious patterns and never assert observed runtime bugs. Reports do not include full configuration files, but can include relative names and hashes; review output before making it public.
+
 ## Install
 
 Python 3.10+ required. From the repository root:
