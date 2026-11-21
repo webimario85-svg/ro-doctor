@@ -34,8 +34,15 @@ Do not mix with ValkiRO source or branches. No copyrighted assets, secret config
 - Mapindex providers must be explicitly listed under the server root; no arbitrary external locations, no client patching or mapcache repair.
 - The deterministic random-input corpus is bounded regression fuzzing, not comprehensive coverage.
 
-## Next priority — M5
-- Establish a separate Athena TestLab repository and runner with actual, authorized isolated execution, status observations and sanitized log generation; do not falsely claim existing live integration.
-- Add test-case bundle verification/signature or provenance trust with independently verifiable local logs and clear runtime test evidence.
-- Evaluate richer map-index/mapcache consistency contracts against upstream rAthena while keeping custom content warnings informational.
-- Resume with Git state, current branch/worktrees, PR and this single checkpoint. No replay or parallel overwrite.
+## Linked standalone Athena TestLab — M5 completed 2026-11-21
+- New independent public repository: https://github.com/webimario85-svg/athena-testlab ; tag v0.1.0; commit 7c55a04d24bdc862addb58b4d1b9f3574830b26b. Separate codebase, package, AGENTS.md and STATE.md; never copied into RO Doctor or ValkiRO branches.
+- Athena TestLab implements real, explicitly authorized loopback TCP and process-exit tests with sanitized, hashed local logs. No Ragnarok protocol handshake implementation yet.
+- Independently installed Athena TestLab v0.1.0 and RO Doctor v0.5.0 wheels: Windows Python 3.13 and offline Linux Python 3.10 cross-tool evidence exchange PASS. Synthetic localhost TCP bytes produced a case v1; RO Doctor independently returned CASE_LOG_SHA256_MATCH and CASE_REPORTED_PASS strictly for tcp-exchange. This is not a game login.
+- Separately, Athena TestLab executed upstream rAthena login-server, char-server, map-server --run-once in a disposable DB/container lab: 3/3 PASS. Docker image and hash, SQL import, and accurate limitations are recorded in the TestLab docs/real-rathena-qa.md. No client Ragexe participated; no protocol compatibility claim. Temporary DB was removed, ValkiRO containers unchanged.
+- RO Doctor JSON output and source code are unchanged. This M5 update is documentation/checkpoint only; v0.5.0 remains the RO Doctor code release.
+
+## Next priority — M6
+- Implement an independently verified rAthena packet/login test adapter in Athena TestLab, with safe isolated credentials and explicit client/version behavior. Do not equate a TCP-open test with real gameplay.
+- Decide how to verify provenance signatures and runner identity without misrepresenting self-reported SHA-256 log checksums.
+- Keep RO Doctor compatibility schema stable until a separately designed v2 contract is justified. Cross-project integration should use published packages only.
+- Continue from this checkpoint, the standalone Athena TestLab STATE.md, and real Git/worktree/PR state; never overwrite parallel work.
