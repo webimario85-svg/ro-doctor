@@ -217,7 +217,8 @@ def _scan_client(root: Path, report: Report) -> None:
 
 
 def build_registry(*, catalog_path=None, server_build_sha256=None,
-                   client_exe=None, case_file=None):
+                   client_exe=None, case_file=None, case_log=None,
+                   map_indices=()):
     """Return fresh built-ins so users can extend without mutating global state."""
     from .checks import Check, Registry
     from . import catalog, catalog_audit, cases, enhanced, mapcache, mapindex
@@ -240,7 +241,7 @@ def build_registry(*, catalog_path=None, server_build_sha256=None,
                             mapcache.deep_payloads, default=False))
     registry.register(Check("server-map-index", "server",
                             "Conservative mapcache names versus inter-server map_index",
-                            mapindex.compare))
+                            mapindex.detector(tuple(map_indices))))
     registry.register(Check("client-static", "client",
                             "Client executable, assets, and data.ini GRF references",
                             lambda server, client, report: _scan_client(client, report)))
@@ -266,7 +267,8 @@ def build_registry(*, catalog_path=None, server_build_sha256=None,
                             default=catalog_path is not None))
     registry.register(Check("case-evidence", "client",
                             "Validate structured, hashed QA case from external test runner",
-                            cases.detector(case_file, server_build_sha256, client_exe, catalog_path),
+                            cases.detector(case_file, server_build_sha256, client_exe, catalog_path,
+                                           case_log),
                             default=case_file is not None))
     return registry
 
@@ -277,12 +279,15 @@ def scan(server: Path | None = None, client: Path | None = None, *,
          registry=None, catalog_path: Path | None = None,
          server_build_sha256: str | None = None,
          client_exe: str | None = None,
-         case_file: Path | None = None) -> Report:
+         case_file: Path | None = None,
+         case_log: Path | None = None,
+         map_indices: tuple[str, ...] = ()) -> Report:
     """Read-only scan using explicitly registered checks. Never loads plugins from disk."""
     report = Report()
     selected = (registry if registry is not None else build_registry(
         catalog_path=catalog_path, server_build_sha256=server_build_sha256,
-        client_exe=client_exe, case_file=case_file)).select(only, skip)
+        client_exe=client_exe, case_file=case_file,
+        case_log=case_log, map_indices=map_indices)).select(only, skip)
     paths = {"server": Path(server).expanduser() if server is not None else None,
              "client": Path(client).expanduser() if client is not None else None}
     valid = {"server": False, "client": False}

@@ -6,6 +6,7 @@ import sys
 from . import __version__
 from .render import render_html, render_json, render_text
 from .scan import build_registry, scan
+from .mapindex import MAX_EXTRA_PATHS, normalize_extra_index
 
 FORMATS = {"text": render_text, "json": render_json, "html": render_html}
 
@@ -37,6 +38,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Exact Ragexe/Ragnarok executable basename when ambiguous")
     parser.add_argument("--case-file", type=Path,
                         help="Local external QA test-case JSON with exact hashes and log digest")
+    parser.add_argument("--case-log", type=Path,
+                        help="Opt-in local QA log to verify against --case-file log_sha256")
+    parser.add_argument("--map-index", action="append", metavar="RELATIVE_TXT",
+                        help="Add a custom relative map index .txt file inside --server")
     parser.add_argument("--version", action="version", version=__version__)
     return parser
 
@@ -46,7 +51,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     registry = build_registry(catalog_path=args.catalog,
                               server_build_sha256=args.server_build_sha256,
-                              client_exe=args.client_exe, case_file=args.case_file)
+                              client_exe=args.client_exe, case_file=args.case_file,
+                              case_log=args.case_log,
+                              map_indices=tuple(args.map_index or ()))
     if args.list_checks:
         for check in registry.available():
             mode = "default" if check.default else "on-demand"
@@ -54,7 +61,18 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.server is None and args.client is None:
         parser.error("provide --server, --client, or both")
-    evidence_files = (("--catalog", args.catalog), ("--case-file", args.case_file))
+    if args.case_log is not None and args.case_file is None:
+        parser.error("--case-log requires --case-file")
+    if args.map_index and args.server is None:
+        parser.error("--map-index requires --server")
+    if len(args.map_index or ()) > MAX_EXTRA_PATHS:
+        parser.error(f"--map-index accepts at most {MAX_EXTRA_PATHS} entries")
+    for raw in args.map_index or ():
+        normalized = normalize_extra_index(raw)
+        if normalized is None or not (args.server / normalized).resolve().is_relative_to(args.server.resolve()) or not (args.server / normalized).is_file():
+            parser.error("--map-index must be an existing relative .txt file within --server")
+    evidence_files = (("--catalog", args.catalog), ("--case-file", args.case_file),
+                      ("--case-log", args.case_log))
     if any(path is not None for _, path in evidence_files):
         if args.client is None or args.server_build_sha256 is None:
             parser.error("--catalog/--case-file requires --client and --server-build-sha256")
@@ -80,7 +98,8 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--output must be a file, not a directory")
 
     report = scan(args.server, args.client, only=args.only_check,
-                  skip=args.skip_check, registry=registry, case_file=args.case_file)
+                  skip=args.skip_check, registry=registry, case_file=args.case_file,
+                  case_log=args.case_log, map_indices=tuple(args.map_index or ()))
     rendered = FORMATS[args.format](report)
     if args.output is None:
         sys.stdout.write(rendered)

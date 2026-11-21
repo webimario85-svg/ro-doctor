@@ -51,6 +51,17 @@ For compatibility evidence, independent QA tools can emit a strictly structured 
 
 Detailed guide: [M3 map index and test-case evidence](docs/m3-map-index-provenance.md). Open format: [test-case JSON Schema v1](docs/test-case.schema.json). Fully offline release preflight (Python 3.10+): `python scripts/verify_release.py`.
 
+## M4: Athena TestLab interoperability and stronger evidence checks
+
+M4 adds an opt-in local log SHA-256 verification path for external test-case artifacts. A matching checksum only identifies bytes, **not** an authentic successful client/server handshake. Incorrect, unavailable or oversized logs prevent claimed pass/fail output. It also accepts explicitly selected relative map index providers under the selected server root, without falsely marking custom maps as broken.
+
+    rodoctor --client "D:\Ragnarok" --case-file "D:\reports\case.json" --case-log "D:\reports\run.log" --server-build-sha256 REAL_SERVER_SHA256 --only-check case-evidence --format json
+    rodoctor --server "D:\rathena" --map-index "conf\maps\custom-index.txt" --only-check server-map-index
+
+The [Athena TestLab file-exchange contract](docs/athena-testlab-contract.md) makes it possible for an independent runner to supply test-case JSON and a sanitized log. No live Athena TestLab connection, game execution or protocol test is claimed. The scanner remains read-only.
+
+The M4 deterministic stress suite covers 250 synthetic mapcache blobs, malformed inputs and invalid provider paths. Run local release QA with `python scripts/verify_release.py` (no GitHub Actions). See [M4 cross-platform QA](docs/m4-validation.md) for the tested Python versions and explicit limitations.
+
 ## Install
 
 Python 3.10+ required. From the repository root:
